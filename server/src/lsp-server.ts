@@ -306,17 +306,17 @@ export class LspServer {
 
         for (const change of params.contentChanges) {
             let line, offset, endLine, endOffset = 0;
-            if (!change.range) {
+            if ('range' in change) {
+                line = change.range.start.line + 1;
+                offset = change.range.start.character + 1;
+                endLine = change.range.end.line + 1;
+                endOffset = change.range.end.character + 1;
+            } else {
                 line = 1;
                 offset = 1;
                 const endPos = document.positionAt(document.getText().length);
                 endLine = endPos.line + 1;
                 endOffset = endPos.character + 1;
-            } else {
-                line = change.range.start.line + 1;
-                offset = change.range.start.character + 1;
-                endLine = change.range.end.line + 1;
-                endOffset = change.range.end.character + 1;
             }
             this.tspClient.notify(CommandTypes.Change, {
                 file,
@@ -863,9 +863,17 @@ export class LspServer {
     }
 
     protected onTsEvent(event: protocol.Event): void {
-        if (event.event === EventTypes.SementicDiag ||
-            event.event === EventTypes.SyntaxDiag ||
-            event.event === EventTypes.SuggestionDiag) {
+        function isDiagnosticEvent(evt: protocol.Event | tsp.DiagnosticEvent): evt is tsp.DiagnosticEvent {
+            return evt.event === EventTypes.SementicDiag ||
+            evt.event === EventTypes.SyntaxDiag ||
+            evt.event === EventTypes.SuggestionDiag;
+        }
+        if (
+            isDiagnosticEvent(event)
+            // event.event === EventTypes.SementicDiag ||
+            // event.event === EventTypes.SyntaxDiag ||
+            // event.event === EventTypes.SuggestionDiag
+            ) {
             this.diagnosticQueue.updateDiagnostics(event.event, event);
         } else {
             this.logger.log("Ignored event", {

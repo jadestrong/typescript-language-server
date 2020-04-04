@@ -56,7 +56,7 @@ export function createLspConnection(options: IServerOptions): lsp.IConnection {
     connection.onFoldingRanges(server.foldingRanges.bind(server));
 
     // proposed `textDocument/calls` request
-    connection.onRequest(lspcalls.CallsRequest.type, server.calls.bind(server));
+    // connection.onRequest(lspcalls.CallsRequest.type, server.calls.bind(server));
 
     return connection;
 }
