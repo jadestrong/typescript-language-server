@@ -14,7 +14,7 @@ import * as fs from 'fs-extra';
 import * as commandExists from 'command-exists';
 import debounce = require('p-debounce');
 
-import { CommandTypes, EventTypes, EventTypesEnum } from './tsp-command-types';
+import { CommandTypes, EventTypesEnum } from './tsp-command-types';
 
 import { Logger, PrefixingLogger } from './logger';
 import { TspClient } from './tsp-client';
@@ -493,19 +493,19 @@ export class LspServer {
             // this.tspClient.request 会返回一个 promise ，具体调用是放在这个 interuptDiagnostics 函数内执行的
             // TODO interuptDiagnostics 具体作用？？
 
-            let isNewIdentifierLocation = true;
-            let isIncomplete = false;
+            // let isNewIdentifierLocation = true;
+            // let isIncomplete = false;
             let isMemberCompletion = false;
             // let dotAccessorContext: DotAccessorContext | undefined;
             let entries: ReadonlyArray<protocol.CompletionEntry>;
-            let metadata: any | undefined;
+            // let metadata: any | undefined;
             const result = await this.interuptDiagnostics(() => this.tspClient.request(CommandTypes.CompletionInfo, args));
             if (result.type !== 'response' || !result.body) {
                 return null;
             }
 
             // const body = result.body;
-            isNewIdentifierLocation = result.body.isNewIdentifierLocation;
+            // isNewIdentifierLocation = result.body.isNewIdentifierLocation;
             isMemberCompletion = result.body.isMemberCompletion;
             if (isMemberCompletion) {
                 // TODO
@@ -521,8 +521,8 @@ export class LspServer {
             // "insertText":"?.message",
             // "replacementSpan":{"start":{"line":5,"offset":7},"end":{"line":5,"offset":8}}}]}}
 
-            isIncomplete = (result as any).metadata && (result as any).metadata.isIncomplete;
-            metadata = result.metadata;
+            // isIncomplete = (result as any).metadata && (result as any).metadata.isIncomplete;
+            // metadata = result.metadata;
             entries = result.body.entries;
             const completionConfiguration = {
                 useCodeSnippetsOnMethodSuggest: false,
@@ -531,7 +531,7 @@ export class LspServer {
                 nameSuggestions: true,
                 includeAutomaticOptionalChainCompletions: true
             };
-            winstonLogger.log('info', 'entries length: %s', entries.length);
+            winstonLogger.log('info', 'suggests length: %s', entries.length);
             // return [];
             return entries
                 .filter(entry => !showExcludeCompletionEntry(entry, completionConfiguration))
@@ -606,13 +606,13 @@ export class LspServer {
         if (!result.body || !result.body.info.canRename || result.body.locs.length === 0) {
             return undefined;
         }
-        const workspaceEdit = {
+        const workspaceEdit: lsp.WorkspaceEdit = {
             changes: {}
         };
         result.body.locs
             .forEach((spanGroup) => {
                 const uri = pathToUri(spanGroup.file, this.documents),
-                    textEdits = workspaceEdit.changes[uri] || (workspaceEdit.changes[uri] = []);
+                    textEdits = workspaceEdit.changes![uri] || (workspaceEdit.changes![uri] = []);
 
                 spanGroup.locs.forEach((textSpan) => {
                     textEdits.push({
@@ -702,7 +702,7 @@ export class LspServer {
         if (!response || !response.body) {
             return undefined;
         }
-        const info = response.body;
+        // const info = response.body;
         return asSignatureHelp(response.body);
     }
     protected async getSignatureHelp(file: string, position: lsp.Position): Promise<tsp.SignatureHelpResponse | undefined> {

@@ -96,11 +96,12 @@ async function findOutgoingCalls(tspClient: TspClient, contextSymbol: lspcalls.D
         const tspPosition = { line: candidateRange.start.line + 1, offset: candidateRange.start.character + 1 };
         const references = await findNonDefinitionReferences(tspClient, { file, start: tspPosition, end: tspPosition });
         for (const reference of references) {
-        const tspPosition = { line: candidateRange.start.line + 1, offset: candidateRange.start.character + 1 };
+            const tspPosition = { line: candidateRange.start.line + 1, offset: candidateRange.start.character + 1 };
             if (tspPosition.line === reference.start.line) {
                 return reference;
             }
         }
+        return;
     }
 
     const calls: tsp.FileSpan[] = [];

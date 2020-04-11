@@ -6,7 +6,7 @@
  */
 
 import * as lsp from 'vscode-languageserver';
-import { Position } from './protocol-translation';
+// import { Position } from './protocol-translation';
 
 export class LspDocument implements lsp.TextDocument {
 

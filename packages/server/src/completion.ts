@@ -9,7 +9,7 @@ import * as lsp from 'vscode-languageserver';
 import * as tsp from 'typescript/lib/protocol';
 import { LspDocument } from './document';
 import { ScriptElementKind } from './tsp-command-types';
-import { asRange, toTextEdit, asPlainText, asTagsDocumentation, asDocumentation } from './protocol-translation';
+import { asRange, toTextEdit, asPlainText, asDocumentation } from './protocol-translation';
 import { Commands } from './commands';
 import * as PConst from './protocol.const';
 

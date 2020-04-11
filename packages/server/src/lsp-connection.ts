@@ -6,11 +6,11 @@
  */
 
 import * as lsp from 'vscode-languageserver';
-import * as lspcalls from './lsp-protocol.calls.proposed'
+// import * as lspcalls from './lsp-protocol.calls.proposed'
 
-import { Logger, LspClientLogger } from './logger';
+import { LspClientLogger } from './logger';
 import { LspServer } from './lsp-server';
-import { LspClient, LspClientImpl } from './lsp-client';
+import { LspClientImpl } from './lsp-client';
 
 export interface IServerOptions {
     tsserverPath: string;

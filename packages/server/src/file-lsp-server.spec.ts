@@ -6,12 +6,12 @@
  */
 
 import * as chai from 'chai';
-import * as path from 'path';
+// import * as path from 'path';
 import { LspServer } from './lsp-server';
 import { uri, createServer, lastPosition, filePath, readContents } from './test-utils';
 
 const assert = chai.assert;
-const expect = chai.expect;
+// const expect = chai.expect;
 
 let server: LspServer;
 

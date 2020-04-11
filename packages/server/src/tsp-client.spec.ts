@@ -28,7 +28,7 @@ const moduleServer = new TspClient({
 });
 
 const servers = { executableServer, moduleServer };
-Object.keys(servers).forEach(serverName => {
+(Object.keys(servers) as Array<keyof typeof servers>).forEach(serverName => {
   const server = servers[serverName];
   server.start();
 

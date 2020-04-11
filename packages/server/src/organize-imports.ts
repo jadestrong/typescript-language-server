@@ -6,7 +6,7 @@
  */
 
 import * as lsp from 'vscode-languageserver';
-import * as tsp from 'typescript/lib/protocol';
+// import * as tsp from 'typescript/lib/protocol';
 import { Commands } from './commands';
 
 export function provideOrganizeImports(file: string, context: lsp.CodeActionContext, result: (lsp.Command | lsp.CodeAction)[]): void {

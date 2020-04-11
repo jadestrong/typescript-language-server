@@ -12,7 +12,7 @@ import { pathToUri } from './protocol-translation';
 import { LspServer } from './lsp-server';
 import { ConsoleLogger } from './logger';
 
-export function uri(suffix: string = ''): string {
+export function uri(this: any, suffix: string = ''): string {
     const resolved = this.filePath(suffix);
     return pathToUri(resolved, undefined);
 }

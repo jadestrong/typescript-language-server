@@ -8,8 +8,8 @@
 import * as lsp from 'vscode-languageserver';
 import * as tsp from 'typescript/lib/protocol';
 import { Commands } from './commands';
-import { toTextDocumentEdit } from './protocol-translation';
-import { LspDocument } from './document';
+// import { toTextDocumentEdit } from './protocol-translation';
+// import { LspDocument } from './document';
 
 export function provideRefactors(response: tsp.GetApplicableRefactorsResponse | undefined, result: (lsp.Command | lsp.CodeAction)[], args: tsp.FileRangeRequestArgs): void {
     if (!response || !response.body) {

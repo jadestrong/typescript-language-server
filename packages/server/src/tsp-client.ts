@@ -127,10 +127,10 @@ export class TspClient {
         });
     }
 
-    notify(command: CommandTypes.Open, args: protocol.OpenRequestArgs)
-    notify(command: CommandTypes.Close, args: protocol.FileRequestArgs)
-    notify(command: CommandTypes.Saveto, args: protocol.SavetoRequestArgs)
-    notify(command: CommandTypes.Change, args: protocol.ChangeRequestArgs)
+    notify(command: CommandTypes.Open, args: protocol.OpenRequestArgs): void
+    notify(command: CommandTypes.Close, args: protocol.FileRequestArgs): void
+    notify(command: CommandTypes.Saveto, args: protocol.SavetoRequestArgs): void
+    notify(command: CommandTypes.Change, args: protocol.ChangeRequestArgs): void
     notify(command: string, args: object): void {
         this.sendMessage(command, true, args);
     }
