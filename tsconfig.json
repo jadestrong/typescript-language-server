@@ -1,7 +1,9 @@
 {
-    "files": [],
-    "references": [
-        { "path": "packages/server" },
-        { "path": "packages/example" }
+    "extends": "./tsconfig.base.json",
+    "compilerOptions": {
+        "noEmit": true
+    },
+    "exclude": [
+        "node_modules"
     ]
 }

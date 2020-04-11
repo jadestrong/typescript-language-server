@@ -18,12 +18,9 @@
         "typescript": "^3.8.3"
     },
     "scripts": {
-        "prepare": "lerna run clean && yarn build && yarn bundle",
-        "clean": "lerna run clean",
-        "build": "concurrently -n compile,lint -c blue,green \"yarn compile\" \"yarn lint\"",
-        "compile": "tsc -b",
-        "watch": "tsc -b --watch --verbose",
-        "watch:server": "tsc-watch ./packages/server --onSuccess \"yarn start\"",
+        "bootstrap": "npm i && lerna bootstrap --ignore-scripts && npm run build",
+        "build": "tsc --build packages/tsconfig.project.json",
+        "watch": "tsc-watch --build packages/tsconfig.project.json --onSuccess \"yarn start\"",
         "lint": "eslint packages/**/*.ts",
         "test": "lerna run test",
         "bundle": "lerna run --scope example bundle",
@@ -34,9 +31,5 @@
         "publish:latest": "lerna publish --registry=https://registry.npmjs.org/ --exact",
         "publish:next": "lerna publish --registry=https://registry.npmjs.org/ --exact --canary=next --npm-tag=next --force-publish --skip-git --yes",
         "publish:dev": "lerna publish --registry=https://registry.npmjs.org/ --exact --canary=dev --npm-tag=dev --force-publish --skip-git --yes"
-    },
-    "workspaces": [
-        "packages/*"
-    ],
-    "dependencies": {}
+    }
 }

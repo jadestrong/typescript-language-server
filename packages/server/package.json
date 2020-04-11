@@ -1,42 +1,41 @@
 {
-  "name": "typescript-language-server",
-  "version": "0.4.0",
-  "description": "Language Server Protocol (LSP) implementation for TypeScript using tsserver",
-  "author": "TypeFox and others",
-  "license": "Apache-2.0",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/theia-ide/typescript-language-server.git"
-  },
-  "files": [
-    "lib"
-  ],
-  "bin": {
-    "typescript-language-server": "./lib/cli.js"
-  },
-  "dependencies": {
-    "command-exists": "1.2.8",
-    "commander": "^5.0.0",
-    "eslint": "^6.8.0",
-    "fs-extra": "^9.0.0",
-    "p-debounce": "^2.1.0",
-    "tempy": "^0.5.0",
-    "vscode-languageserver": "^6.1.1",
-    "vscode-languageserver-protocol": "^3.15.3",
-    "vscode-uri": "^2.1.1"
-  },
-  "scripts": {
-      "build": "yarn clearn && yarn compile",
-    "prepare": "echo 'skip'",
-    "clean": "rimraf lib",
-      "compile": "tsc -p tsconfig.build.json",
-    "test": "mocha --exit --reporter spec \"./lib/**/*.spec.js\"",
-    "lint": "eslint -c ../../.eslintrc.js --ext .ts"
-  },
-  "devDependencies": {
-    "@types/fs-extra": "^8.1.0",
-    "@types/p-debounce": "^1.0.1",
-    "@types/tempy": "^0.3.0",
-    "winston": "^3.2.1"
-  }
+    "name": "typescript-language-server",
+    "version": "0.4.0",
+    "description": "Language Server Protocol (LSP) implementation for TypeScript using tsserver",
+    "author": "TypeFox and others",
+    "license": "Apache-2.0",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/theia-ide/typescript-language-server.git"
+    },
+    "files": [
+        "lib"
+    ],
+    "bin": {
+        "typescript-language-server": "./lib/cli.js"
+    },
+    "dependencies": {
+        "command-exists": "1.2.8",
+        "commander": "^5.0.0",
+        "eslint": "^6.8.0",
+        "fs-extra": "^9.0.0",
+        "p-debounce": "^2.1.0",
+        "tempy": "^0.5.0",
+        "vscode-languageserver": "^6.1.1",
+        "vscode-languageserver-protocol": "^3.15.3",
+        "vscode-uri": "^2.1.1"
+    },
+    "scripts": {
+        "build": "tsc -b ./tsconfig.package.json",
+        "clean": "rimraf lib",
+        "compile": "tsc -b ./tsconfig.package.json",
+        "test": "mocha --exit --reporter spec \"./lib/**/*.spec.js\"",
+        "lint": "eslint -c ../../.eslintrc.js --ext .ts"
+    },
+    "devDependencies": {
+        "@types/fs-extra": "^8.1.0",
+        "@types/p-debounce": "^1.0.1",
+        "@types/tempy": "^0.3.0",
+        "winston": "^3.2.1"
+    }
 }
