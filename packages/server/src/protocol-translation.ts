@@ -57,6 +57,7 @@ export function toFileRangeRequestArgs(file: string, range: lsp.Range): tsp.File
     }
 };
 
+// completionItem 的 type 来自这里
 const symbolKindsMapping: { [name: string]: lsp.SymbolKind } = {
     'enum member': lsp.SymbolKind.Constant,
     'JSX attribute': lsp.SymbolKind.Property,
@@ -198,6 +199,7 @@ function toDocumentHighlightKind(kind: tsp.HighlightSpanKind): lsp.DocumentHighl
     }
 }
 
+// 等价于 vscode/extensions/typescript-language-features/src/utils/typeConverters.ts 中的 fromTextSpan
 export function asRange(span: tsp.TextSpan): lsp.Range {
     return lsp.Range.create(
         Math.max(0, span.start.line - 1), Math.max(0, span.start.offset - 1),

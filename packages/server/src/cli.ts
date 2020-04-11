@@ -40,7 +40,6 @@ if (program.logLevel) {
         logLevel = lsp.MessageType.Warning;
     }
 }
-
 createLspConnection({
     tsserverPath: program.tsserverPath as string,
     tsserverLogFile: program.tsserverLogFile as string,

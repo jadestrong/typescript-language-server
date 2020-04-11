@@ -6,6 +6,7 @@
  */
 
 import * as lsp from 'vscode-languageserver';
+import { Position } from './protocol-translation';
 
 export class LspDocument implements lsp.TextDocument {
 
@@ -44,6 +45,7 @@ export class LspDocument implements lsp.TextDocument {
         return this.document.lineCount;
     }
 
+    // 这个应该可以用来实现 lineAt NOTE
     getLine(line: number): string {
         const lineRange = this.getLineRange(line);
         return this.getText(lineRange);
@@ -80,8 +82,28 @@ export class LspDocument implements lsp.TextDocument {
         this.document = lsp.TextDocument.create(this.uri, this.languageId, version, newContent);
     }
 
+    getWordRangeAtPosition(position: lsp.Position): lsp.Range | undefined {
+        const lines = this.lineCount;
+        const line = Math.min(lines - 1, Math.max(0, position.line));
+        const lineText = this.getLine(line);
+        const character = Math.min(lineText.length - 1, Math.max(0, position.character));
+        let startChar = character;
+        while(startChar > 0 && !/\s/.test(lineText.charAt(startChar - 1))) {
+            --startChar;
+        }
+        let endChar = character;
+        while(endChar < lineText.length - 1 && !/\s/.test(lineText.charAt(endChar))) {
+            ++endChar;
+        }
+        if (startChar === endChar) {
+            return undefined;
+        } else {
+            return lsp.Range.create(line, startChar, line, endChar);
+        }
+    }
 }
 
+// TODO 实现一个 lineAt 方法, 目前可以使用 getLine 方法代替
 export class LspDocuments {
 
     private readonly _files: string[] = [];

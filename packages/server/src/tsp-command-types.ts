@@ -17,13 +17,18 @@ See the Apache Version 2.0 License for specific language governing permissions
 and limitations under the License.
 ***************************************************************************** */
 
+// 对应 TypeScript/src/server/protocol.ts 文件
 export const enum CommandTypes {
+    /* TODO */
+    JsxClosingTag = "jsxClosingTag",
     Brace = "brace",
     BraceCompletion = "braceCompletion",
     GetSpanOfEnclosingComment = "getSpanOfEnclosingComment",
     Change = "change",
     Close = "close",
+    /** @deprecated Prefer CompletionInfo -- see comment on CompletionsResponse */
     Completions = "completions",
+    CompletionInfo = "completionInfo",
     CompletionDetails = "completionEntryDetails",
     CompileOnSaveAffectedFileList = "compileOnSaveAffectedFileList",
     CompileOnSaveEmitFile = "compileOnSaveEmitFile",
@@ -73,10 +78,17 @@ export const enum CommandTypes {
     GetApplicableRefactors = "getApplicableRefactors",
     GetEditsForRefactor = "getEditsForRefactor",
     OrganizeImports = "organizeImports",
-    GetEditsForFileRename = "getEditsForFileRename"
+    GetEditsForFileRename = "getEditsForFileRename",
+    /* TODO 这里是新增的，注意看看有什么作用 */
+    SelectionRange = "selectionRange",
+    PrepareCallHierarchy = "prepareCallHierarchy",
+    ProvideCallHierarchyIncomingCalls = "provideCallHierarchyIncomingCalls",
+    ProvideCallHierarchyOutgoingCalls = "provideCallHierarchyOutgoingCalls",
 }
 
-export const enum EventTypes {
+export type EventTypes = 'configFileDiag' | 'requestCompleted' | 'syntaxDiag' | 'semanticDiag' | 'suggestionDiag' | 'telemetry';
+
+export const enum EventTypesEnum {
     ConfigFileDiag = 'configFileDiag',
     RequestCompleted = 'requestCompleted',
     SyntaxDiag = 'syntaxDiag',

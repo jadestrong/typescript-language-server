@@ -11,9 +11,41 @@ import { LspDocument } from './document';
 import { ScriptElementKind } from './tsp-command-types';
 import { asRange, toTextEdit, asPlainText, asTagsDocumentation, asDocumentation } from './protocol-translation';
 import { Commands } from './commands';
+import * as PConst from './protocol.const';
 
 export interface TSCompletionItem extends lsp.CompletionItem {
     data: tsp.CompletionDetailsRequestArgs
+}
+
+function getFilterText(line: string, insertText: string | undefined, entry: import('typescript/lib/protocol').CompletionEntry, position: lsp.Position, document: LspDocument): string | undefined {
+    if (entry.name.startsWith('#')) {
+        const wordRange = document.getWordRangeAtPosition(position);
+        const wordStart = wordRange ? line.charAt(wordRange.start.character) : undefined;
+        if (insertText) {
+            if (insertText.startsWith('this.#')) {
+                return wordStart === '#' ? insertText : insertText.replace(/^this\.#/, '');
+            } else {
+                return insertText;
+            }
+        } else {
+            return wordStart === '#' ? undefined : entry.name.replace(/^#/, '');
+        }
+    }
+    // For `this.` completions, generally don't set the filter text since we don't want them to be overly prioritized. #74164
+    if (insertText?.startsWith('this.')) {
+        return undefined;
+    }
+    // Handle the case:
+    // ```
+    // const xyz = { 'ab c': 1 };
+    // xyz.ab|
+    // ```
+    // In which case we want to insert a bracket accessor but should use `.abc` as the filter text instead of
+    // the bracketed insert text.
+    else if (insertText?.startsWith('[')) {
+        return insertText.replace(/^\[['"](.+)[['"]\]$/, '.$1');
+    }
+    return insertText;
 }
 
 export function asCompletionItem(entry: import('typescript/lib/protocol').CompletionEntry, file: string, position: lsp.Position, document: LspDocument): TSCompletionItem {
@@ -29,40 +61,67 @@ export function asCompletionItem(entry: import('typescript/lib/protocol').Comple
             entryNames: [
                 entry.source ? { name: entry.name, source: entry.source } : entry.name
             ]
-        }
+        },
+        filterText: entry.insertText
+    }
+    if (entry.source) {
+        // De-prioritze auto-imports
+        // https://github.com/Microsoft/vscode/issues/40311
+        item.sortText = '\uffff' + entry.sortText;
     }
     if (entry.isRecommended) {
         // Make sure isRecommended property always comes first
         // https://github.com/Microsoft/vscode/issues/40325
         item.preselect = true;
-    } else if (entry.source) {
-        // De-prioritze auto-imports
-        // https://github.com/Microsoft/vscode/issues/40311
-        item.sortText = '\uffff' + entry.sortText;
     }
     if (item.kind === lsp.CompletionItemKind.Function || item.kind === lsp.CompletionItemKind.Method) {
         item.insertTextFormat = lsp.InsertTextFormat.Snippet;
     }
+    // {"seq":0,"type":"response","command":"completionInfo","request_seq":489,"success":true,"performanceData":{"updateGraphDurationMs":6},"body":{"isGlobalCompletion":false,"isMemberCompletion":true,"isNewIdentifierLocation":false,"entries":[{"name":"message","kind":"property","kindModifiers":"","sortText":"0",
+    // "insertText":"?.message","replacementSpan":{"start":{"line":6,"offset":7},"end":{"line":6,"offset":15}}}]}}
+    let insertText = item.insertText = entry.insertText;
+    let line = document.getLine(position.line + 1);
+    item.filterText = getFilterText(line, insertText, entry, position, document);
 
-    let insertText = entry.insertText;
+    // NOTE vscode use Range property, but it isn't a LSP property, so we must use TextEdit property, it need a replacementRange.
     let replacementRange = entry.replacementSpan && asRange(entry.replacementSpan);
     // Make sure we only replace a single line at most
     if (replacementRange && replacementRange.start.line !== replacementRange.end.line) {
         replacementRange = lsp.Range.create(replacementRange.start, document.getLineEnd(replacementRange.start.line));
     }
-    if (insertText && replacementRange && insertText[0] === '[') { // o.x -> o['x']
-        item.filterText = '.' + item.label;
-    }
-    if (entry.kindModifiers && entry.kindModifiers.match(/\boptional\b/)) {
-        if (!insertText) {
-            insertText = item.label;
+
+    if (entry.kindModifiers) {
+        const kindModifiers = new Set(entry.kindModifiers.split(/\s+/g));
+        if (kindModifiers.has(PConst.KindModifiers.optional)) { // FIXME 抽出成常量
+            if (!insertText) {
+                insertText = item.label;
+            }
+            if (!item.filterText) {
+                item.filterText = item.label;
+            }
+            item.label += '?';
         }
-        if (!item.filterText) {
-            item.filterText = item.label;
+        // Not need this, because this is only work for vscode
+        // if (kindModifiers.has('color')) {
+        //     item.kind = 15;
+        // }
+        if (entry.kind === PConst.Kind.script) {
+            for (const extModifier of PConst.KindModifiers.fileExtensionKindModifiers) {
+                if (kindModifiers.has(extModifier)) {
+                    if (entry.name.toLowerCase().endsWith(extModifier)) {
+                        item.detail = entry.name;
+                    } else {
+                        item.detail = entry.name + extModifier;
+                    }
+                    break;
+                }
+            }
         }
-        item.label += '?';
     }
+    // NOTE 搞清楚 textEdit 和 Range 之间的区别：TextEdit 是 Range 的一个变种
+    // 在 vscode 中 textEdit 被标记为 deprecated ，推荐使用 range + insertText 代替，但是 lsp 协议并没有改
     if (insertText && replacementRange) {
+        // TextEdit {range: Range, newLabel: string} 定义在 vscode-langaugeserver-types 中
         item.textEdit = lsp.TextEdit.replace(replacementRange, insertText);
     } else {
         item.insertText = insertText;

@@ -14,7 +14,7 @@ import * as fs from 'fs-extra';
 import * as commandExists from 'command-exists';
 import debounce = require('p-debounce');
 
-import { CommandTypes, EventTypes } from './tsp-command-types';
+import { CommandTypes, EventTypes, EventTypesEnum } from './tsp-command-types';
 
 import { Logger, PrefixingLogger } from './logger';
 import { TspClient } from './tsp-client';
@@ -38,6 +38,8 @@ import { provideOrganizeImports } from './organize-imports';
 import { TypeScriptInitializeParams, TypeScriptInitializationOptions, TypeScriptInitializeResult } from './ts-protocol';
 import { collectDocumentSymbols, collectSymbolInformations } from './document-symbol';
 import { computeCallers, computeCallees } from './calls';
+import * as PConst from './protocol.const';
+import winstonLogger from './winstonLogger';
 
 export interface IServerOptions {
     logger: Logger
@@ -47,6 +49,32 @@ export interface IServerOptions {
     lspClient: LspClient;
 }
 
+interface CompletionConfiguration {
+    readonly useCodeSnippetsOnMethodSuggest: boolean;
+    readonly nameSuggestions: boolean;
+    readonly pathSuggestions: boolean;
+    readonly autoImportSuggestions: boolean;
+    readonly includeAutomaticOptionalChainCompletions: boolean;
+}
+
+function showExcludeCompletionEntry(
+    element: protocol.CompletionEntry,
+    completionConfiguration: CompletionConfiguration
+) {
+    return (
+        (!completionConfiguration.nameSuggestions && element.kind === PConst.Kind.warning)
+        || (!completionConfiguration.pathSuggestions &&
+            (element.kind === PConst.Kind.directory || element.kind === PConst.Kind.script || element.kind === PConst.Kind.externalModuleName))
+        || (!completionConfiguration.autoImportSuggestions && element.hasAction)
+    );
+}
+
+// language-server 服务，用于和 lsp-client 通信，然后将其转发给 tspClient ，由其与 tsserver 通信
+// vscode 中应该是 lsp-client 直接与 tsserver 通信
+// 编辑器会将变化通知 lsp-client ，然后它与 language-server 通信获取反馈后再交给编辑器来渲染结果
+// 一些 vscode 在 client 层的做的优化，由于 emacs 的 lsp 没有专门的 javascript/typescript 的 lsp-client ，因此，应该放在这个中间服务来做；
+// 这个中间服务是按 lsp 协议实现的，所以，在 tsserver 返回的结果时进行这些优化处理，
+// 以及一些 lsp-client 没有做的默认请求配置，比如 compilerOptions 等需要放到这个中间 server 中来做
 export class LspServer {
 
     private initializeParams: TypeScriptInitializeParams;
@@ -120,11 +148,30 @@ export class LspServer {
             logger: this.options.logger,
             onEvent: this.onTsEvent.bind(this)
         });
+        this.tspClient.start(); // 缺少在 service start 之后，配置 compilerOptions 的请求
 
-        this.tspClient.start();
         this.tspClient.request(CommandTypes.Configure, {
+            // hostInfo: 'Emacs 26.3',
+            hostInfo: 'vscode',
             preferences: {
-                allowTextChangesInNewFiles: true
+                allowRenameOfImportPath: true,
+                providePrefixAndSuffixTextForRename: true
+            },
+            watchOptions: {}
+        });
+
+        // 需要在这里进行 compilerOptions 配置
+        this.tspClient.request(CommandTypes.CompilerOptionsForInferredProjects, {
+            options: {
+                module: 'commonjs' as protocol.ModuleKind,
+                target: 'es2016' as protocol.ScriptTarget,
+                jsx: 'preserve' as protocol.JsxEmit,
+                allowJs: true,
+                allowSyntheticDefaultImports: true,
+                allowNonTsExtensions: true,
+                resolveJsonModule: true,
+                sourceMap: true,
+                strictNullChecks: true
             }
         });
 
@@ -414,7 +461,8 @@ export class LspServer {
      */
     async completion(params: lsp.CompletionParams): Promise<TSCompletionItem[] | null> {
         const file = uriToPath(params.textDocument.uri);
-        this.logger.log('completion', params, file);
+        this.logger.log('completion', params, file); // 这个是发送给 lsp-client 的信息，就是我们在 lsp-xxx.log
+        //  文件中看到的那些，包含了请求和响应
         if (!file) {
             return [];
         }
@@ -423,17 +471,71 @@ export class LspServer {
         if (!document) {
             throw new Error("The document should be opened for completion, file: " + file);
         }
-
+        const args: protocol.CompletionsRequestArgs & { includeAutomaticOptionalChainCompletions?: boolean } = {
+            file,
+            line: params.position.line + 1,
+            offset: params.position.character + 1,
+            includeExternalModuleExports: true,
+            includeInsertTextCompletions: true,
+            includeAutomaticOptionalChainCompletions: true,
+            triggerCharacter: '.'
+        };
         try {
-            const result = await this.interuptDiagnostics(() => this.tspClient.request(CommandTypes.Completions, {
-                file,
-                line: params.position.line + 1,
-                offset: params.position.character + 1,
-                includeExternalModuleExports: true,
-                includeInsertTextCompletions: true
-            }));
-            const body = result.body || [];
-            return body.map(entry => asCompletionItem(entry, file, params.position, document));
+            // {
+            // "seq":0,
+            // "type":"response",
+            // "command":"completionInfo",
+            // "request_seq":36,
+            // "success":true,
+            // "performanceData":{"updateGraphDurationMs":6},
+            // "body":{"isGlobalCompletion":false,"isMemberCompletion":true,"isNewIdentifierLocation":false,"entries":[{"name":"child","kind":"warning","kindModifiers":"","sortText":"6"},{"name":"clearImmediate","kind":"function","kindModifiers":"declare","sortText":"0"},{"name":"clearInterval","kind":"function","kindModifiers":"declare","sortText":"0"},{"name":"clearTimeout","kind":"function","kindModifiers":"declare","sortText":"0"},{"name":"cp","kind":"warning","kindModifiers":"","sortText":"6"},{"name":"fork","kind":"warning","kindModifiers":"","sortText":"6"},{"name":"fs","kind":"warning","kindModifiers":"","sortText":"6"},{"name":"net","kind":"warning","kindModifiers":"","sortText":"6"},{"name":"setImmediate","kind":"function","kindModifiers":"declare","sortText":"0"},{"name":"setInterval","kind":"function","kindModifiers":"declare","sortText":"0"},{"name":"setTimeout","kind":"function","kindModifiers":"declare","sortText":"0"}]}
+            // }
+            // this.tspClient.request 会返回一个 promise ，具体调用是放在这个 interuptDiagnostics 函数内执行的
+            // TODO interuptDiagnostics 具体作用？？
+
+            let isNewIdentifierLocation = true;
+            let isIncomplete = false;
+            let isMemberCompletion = false;
+            // let dotAccessorContext: DotAccessorContext | undefined;
+            let entries: ReadonlyArray<protocol.CompletionEntry>;
+            let metadata: any | undefined;
+            const result = await this.interuptDiagnostics(() => this.tspClient.request(CommandTypes.CompletionInfo, args));
+            if (result.type !== 'response' || !result.body) {
+                return null;
+            }
+
+            // const body = result.body;
+            isNewIdentifierLocation = result.body.isNewIdentifierLocation;
+            isMemberCompletion = result.body.isMemberCompletion;
+            if (isMemberCompletion) {
+                // TODO
+            }
+
+            // {"seq":0,"type":"response","command":"completionInfo","request_seq":201,"success":true,"performanceData":{"updateGraphDurationMs":1},
+            // "body":{
+            // "isGlobalCompletion":false,
+            // "isMemberCompletion":true,
+            // "isNewIdentifierLocation":false,
+            // "entries":[
+            // {"name":"message","kind":"property","kindModifiers":"","sortText":"0",
+            // "insertText":"?.message",
+            // "replacementSpan":{"start":{"line":5,"offset":7},"end":{"line":5,"offset":8}}}]}}
+
+            isIncomplete = (result as any).metadata && (result as any).metadata.isIncomplete;
+            metadata = result.metadata;
+            entries = result.body.entries;
+            const completionConfiguration = {
+                useCodeSnippetsOnMethodSuggest: false,
+                pathSuggestions: true,
+                autoImportSuggestions: true,
+                nameSuggestions: true,
+                includeAutomaticOptionalChainCompletions: true
+            };
+            winstonLogger.log('info', 'entries length: %s', entries.length);
+            // return [];
+            return entries
+                .filter(entry => !showExcludeCompletionEntry(entry, completionConfiguration))
+                .map(entry => asCompletionItem(entry, file, params.position, document));
         } catch (error) {
             if (error.message === "No content available.") {
                 this.logger.info('No content was available for completion request');
@@ -864,9 +966,9 @@ export class LspServer {
 
     protected onTsEvent(event: protocol.Event): void {
         function isDiagnosticEvent(evt: protocol.Event | tsp.DiagnosticEvent): evt is tsp.DiagnosticEvent {
-            return evt.event === EventTypes.SementicDiag ||
-            evt.event === EventTypes.SyntaxDiag ||
-            evt.event === EventTypes.SuggestionDiag;
+            return evt.event === EventTypesEnum.SementicDiag ||
+            evt.event === EventTypesEnum.SyntaxDiag ||
+            evt.event === EventTypesEnum.SuggestionDiag;
         }
         if (
             isDiagnosticEvent(event)

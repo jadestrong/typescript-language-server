@@ -4,6 +4,9 @@
         "@types/chai": "^4.2.11",
         "@types/mocha": "^7.0.2",
         "@types/node": "^13.11.0",
+        "@typescript-eslint/eslint-plugin": "^2.27.0",
+        "@typescript-eslint/eslint-plugin-tslint": "^2.27.0",
+        "@typescript-eslint/parser": "^2.27.0",
         "chai": "^4.2.0",
         "concurrently": "^5.1.0",
         "lerna": "^3.20.2",
@@ -11,8 +14,7 @@
         "rimraf": "^3.0.2",
         "source-map-support": "^0.5.16",
         "ts-node": "8.8.1",
-        "tslint": "^6.1.1",
-        "tslint-language-service": "^0.9.9",
+        "tsc-watch": "^4.2.3",
         "typescript": "^3.8.3"
     },
     "scripts": {
@@ -21,11 +23,13 @@
         "build": "concurrently -n compile,lint -c blue,green \"yarn compile\" \"yarn lint\"",
         "compile": "tsc -b",
         "watch": "tsc -b --watch --verbose",
-        "lint": "lerna run lint",
+        "watch:server": "tsc-watch ./packages/server --onSuccess \"yarn start\"",
+        "lint": "eslint packages/**/*.ts",
         "test": "lerna run test",
         "bundle": "lerna run --scope example bundle",
         "watch:bundle": "yarn bundle -- -- --watch",
         "start": "lerna run --scope example start",
+        "watch:start": "yarn start -- -- --watch",
         "publish": "yarn && yarn test && yarn publish:latest",
         "publish:latest": "lerna publish --registry=https://registry.npmjs.org/ --exact",
         "publish:next": "lerna publish --registry=https://registry.npmjs.org/ --exact --canary=next --npm-tag=next --force-publish --skip-git --yes",
@@ -33,5 +37,6 @@
     },
     "workspaces": [
         "packages/*"
-    ]
+    ],
+    "dependencies": {}
 }

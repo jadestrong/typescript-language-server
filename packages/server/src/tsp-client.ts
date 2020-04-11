@@ -28,6 +28,8 @@ export interface TspClientOptions {
     onEvent?: (event: protocol.Event) => void;
 }
 
+// 这里对应 vscode/extensitions/typescript-langauge-features/src/typescriptService.ts 文件
+// TypeScriptRequestTypes 实际支持三种请求类型，这里只集成了一种 ！！！
 interface TypeScriptRequestTypes {
     'geterr': [protocol.GeterrRequestArgs, any],
     'documentHighlights': [protocol.DocumentHighlightsRequestArgs, protocol.DocumentHighlightsResponse],
@@ -60,8 +62,9 @@ interface TypeScriptRequestTypes {
     'rename': [protocol.RenameRequestArgs, protocol.RenameResponse];
     'signatureHelp': [protocol.SignatureHelpRequestArgs, protocol.SignatureHelpResponse];
     'typeDefinition': [protocol.FileLocationRequestArgs, protocol.TypeDefinitionResponse];
+    'compilerOptionsForInferredProjects': [protocol.SetCompilerOptionsForInferredProjectsArgs, protocol.SetCompilerOptionsForInferredProjectsResponse];
 }
-
+// 一个微型的 typescript-language-features 客户端，用来和 tsserver 通信
 export class TspClient {
     private readlineInterface: readline.ReadLine;
     private tsserverProc: cp.ChildProcess;
@@ -80,7 +83,7 @@ export class TspClient {
         this.logger = new PrefixingLogger(options.logger, '[tsclient]')
         this.tsserverLogger = new PrefixingLogger(options.logger, '[tsserver]')
     }
-
+    // 启动 tsserver ，由 tsp-client 负责与 tsserver 通信
     start() {
         if (this.readlineInterface) {
             return;
@@ -103,15 +106,18 @@ export class TspClient {
         args.push('--cancellationPipeName', this.cancellationPipeName + '*');
         this.logger.info(`Starting tsserver : '${tsserverPath} ${args.join(' ')}'`);
         const tsserverPathIsModule = path.extname(tsserverPath) === ".js";
+        // 使用 child_process 创建来进程，并启动了数据监听？
         this.tsserverProc = tsserverPathIsModule
             ? cp.fork(tsserverPath, args, { silent: true })
             : cp.spawn(tsserverPath, args);
+        // readline vs stream 
         this.readlineInterface = readline.createInterface(this.tsserverProc.stdout!, this.tsserverProc.stdin!, undefined);
         process.on('exit', () => {
             this.readlineInterface.close();
             this.tsserverProc.stdin!.destroy();
             this.tsserverProc.kill();
         });
+        // 监听 tsserver 的响应 FIXME 监听 line 与 data 的区别，这里用的是 readline
         this.readlineInterface.on('line', line => this.processMessage(line));
 
         const dec = new decoder.StringDecoder("utf-8");
@@ -128,14 +134,19 @@ export class TspClient {
     notify(command: string, args: object): void {
         this.sendMessage(command, true, args);
     }
-
+    // 一般只有不需要返回结果的，tokens 不需要传递，默认为 undefined
+    // 这是 vscode/extenions/typescript-language-features/src/tsServer/server.ts
+    // processBasedTsServer 中 executeImpl 方法的简化版
+    // 最终所有 lsp 请求都要通过这个方法来和 tsserver 进行交流，这里有必要维护一个请求队列码？
     request<K extends keyof TypeScriptRequestTypes>(
         command: K,
         args: TypeScriptRequestTypes[K][0],
         token?: CancellationToken
     ): Promise<TypeScriptRequestTypes[K][1]> {
+        // 看这里应该是有请求就发送了，如果过多可能会有性能损失，而 vscode 通过维护请求队列来处理，性能是不是更好呢？
         this.sendMessage(command, false, args);
         const seq = this.seq;
+        // 声明一个带超时时间的 promise ，如何接收响应的呢？ 在下面 resolveResponse 方法中处理
         const request = (this.deferreds[seq] = new Deferred<any>(command)).promise;
         if (token) {
             const onCancelled = token.onCancellationRequested(() => {
@@ -152,9 +163,12 @@ export class TspClient {
                 }
             });
         }
-        return request;
+        // 这里返回的是一个 Promise, 只有超时或 resolveResponse 响应函数执行之后才会 resolve 或 reject
+        // 那个时候，才会返回给 lsp-client
+        return request; 
     }
 
+    // 发送信息，将信息组织成 tsserver 需要的格式
     protected sendMessage(command: string, notification: boolean, args?: any): void {
         this.seq = this.seq + 1;
         let request: protocol.Request = {
@@ -166,10 +180,13 @@ export class TspClient {
             request.arguments = args;
         }
         const serializedRequest = JSON.stringify(request) + "\n";
+        // 将请求信息写入 child_process 
         this.tsserverProc.stdin!.write(serializedRequest);
         this.logger.log(notification ? "notify" : "request", request);
     }
 
+    // 这里接收到响应信息，然后格式化后交给 resolveResponse 处理
+    // 相当于 vscode/extenstions/typescript-language-features/src/tsServer/server.ts 文件中 dispatchMessage
     protected processMessage(untrimmedMessageString: string): void {
         const messageString = untrimmedMessageString.trim();
         if (!messageString || messageString.startsWith('Content-Length:')) {
@@ -189,12 +206,13 @@ export class TspClient {
             }
         }
     }
-
+    // 这里处理响应信息，根据请求编号 request_seq ，找到对应的 promise 
     private resolveResponse(message: protocol.Message, request_seq: number, success: boolean) {
         const deferred = this.deferreds[request_seq];
         this.logger.log('request completed', { request_seq, success });
         if (deferred) {
             if (success) {
+                // 这里直接将结果返回给调用 request 的哪里了，剩下的就是处理这个 message 了
                 this.deferreds[request_seq].resolve(message);
             } else {
                 this.deferreds[request_seq].reject(message);

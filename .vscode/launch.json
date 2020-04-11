@@ -4,6 +4,23 @@
             {
                 "type": "node",
                 "request": "launch",
+                "name": "Launch Client",
+                "address": "localhost",
+                "runtimeExecutable": "${workspaceFolder}/node_modules/.bin/lerna",
+                "runtimeArgs": [
+                    "exec",
+                    "--scope",
+                    "example",
+                    "--",
+                    "node ./lib/server.js"
+                ],
+                "skipFiles": [
+                    "<node_internals>/**"
+                ]
+            },
+            {
+                "type": "node",
+                "request": "launch",
                 "name": "Mocha Tests",
                 "program": "${workspaceRoot}/node_modules/mocha/bin/_mocha",
                 "args": [
@@ -30,6 +47,17 @@
                 "skipFiles": [
                     "<node_internals>/**"
                 ]
-            }
+            },
+            {
+                "type": "node",
+                "request": "attach",
+                "name": "Attach to Server",
+                "port": 9229,
+                "restart": true,
+                "outFiles": ["${workspaceRoot}/packages/server/lib/**/*.js"],
+                "skipFiles": [
+                    "<node_internals>/**"
+                ]
+            },
         ]
     }

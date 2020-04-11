@@ -30,6 +30,7 @@ const wss = new ws.Server({
     noServer: true,
     perMessageDeflate: false
 });
+console.log('server starting');
 server.on('upgrade', (request: http.IncomingMessage, socket: net.Socket, head: Buffer) => {
     const pathname = request.url ? url.parse(request.url).pathname : undefined;
     if (pathname === '/sampleServer') {
@@ -46,6 +47,7 @@ server.on('upgrade', (request: http.IncomingMessage, socket: net.Socket, head: B
                 dispose: () => webSocket.close()
             };
             // launch the server when the web socket is opened
+            console.log('launch');
             if (webSocket.readyState === webSocket.OPEN) {
                 launch(socket);
             } else {

@@ -10,10 +10,10 @@ const logger = createLogger({
         format.splat(),
         format.json()
     ),
-    defaultMeta: { service: 'typescript-langauge-server' },
+    defaultMeta: { service: 'tls' },
     transports: [
-        new transports.File({ filename: 'tls-error.log', level: 'error' }),
-        new transports.File({ filename: 'tls.log' })
+        new transports.File({ filename: './tls-error.log', level: 'error' }),
+        new transports.File({ filename: './tls.log' })
     ]
 });
 

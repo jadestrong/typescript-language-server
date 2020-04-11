@@ -17,21 +17,26 @@
   "dependencies": {
     "command-exists": "1.2.8",
     "commander": "^5.0.0",
+    "eslint": "^6.8.0",
     "fs-extra": "^9.0.0",
     "p-debounce": "^2.1.0",
     "tempy": "^0.5.0",
     "vscode-languageserver": "^6.1.1",
+    "vscode-languageserver-protocol": "^3.15.3",
     "vscode-uri": "^2.1.1"
   },
   "scripts": {
+      "build": "yarn clearn && yarn compile",
     "prepare": "echo 'skip'",
     "clean": "rimraf lib",
+      "compile": "tsc -p tsconfig.build.json",
     "test": "mocha --exit --reporter spec \"./lib/**/*.spec.js\"",
-    "lint": "tslint -c ../tslint.json --project ."
+    "lint": "eslint -c ../../.eslintrc.js --ext .ts"
   },
   "devDependencies": {
     "@types/fs-extra": "^8.1.0",
     "@types/p-debounce": "^1.0.1",
-    "@types/tempy": "^0.3.0"
+    "@types/tempy": "^0.3.0",
+    "winston": "^3.2.1"
   }
 }

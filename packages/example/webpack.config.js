@@ -37,15 +37,21 @@ module.exports = {
         path: lib
     },
     module: {
-        rules: [{
-            test: /\.css$/,
-            use: ['style-loader', 'css-loader']
-        },
-        {
-            test: /\\.js$/,
-            enforce: 'pre',
-            loader: 'source-map-loader'
-        }]
+        rules: [
+            {
+                test: /\.css$/,
+                use: ['style-loader', 'css-loader']
+            },
+            {
+                test: /\\.js$/,
+                enforce: 'pre',
+                loader: 'source-map-loader'
+            },
+            {
+                test: /\.ttf$/,
+                use: ['file-loader']
+            }
+        ]
     },
     devtool: 'source-map',
     target: 'web',

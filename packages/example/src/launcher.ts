@@ -13,7 +13,7 @@ export function launch(socket: rpc.IWebSocket) {
     const writer = new rpc.WebSocketMessageWriter(socket);
     // start the language server as an external process
     const socketConnection = server.createConnection(reader, writer, () => socket.dispose());
-    const serverConnection = server.createServerProcess('ts', 'node', [__dirname + '/startserver.js', '--stdio']);
+    const serverConnection = server.createServerProcess('ts', 'node', [__dirname + '/startserver.js', '--stdio', '--tsserver-log-file=ts-logs.txt', '--tsserver-log-verbosity=verbose']);
     server.forward(socketConnection, serverConnection, message => {
         if (rpc.isRequestMessage(message)) {
             if (message.method === lsp.InitializeRequest.type.method) {
