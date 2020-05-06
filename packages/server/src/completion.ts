@@ -12,9 +12,13 @@ import { ScriptElementKind } from './tsp-command-types';
 import { asRange, toTextEdit, asPlainText, asDocumentation } from './protocol-translation';
 import { Commands } from './commands';
 import * as PConst from './protocol.const';
+import { DotAccessorContext } from './lsp-server';
+import RangeUtil from './util/range';
+// import { CompletionItemKind } from 'vscode';
 
 export interface TSCompletionItem extends lsp.CompletionItem {
-    data: tsp.CompletionDetailsRequestArgs
+    data: tsp.CompletionDetailsRequestArgs,
+    range?: lsp.Range | { inserting: lsp.Range; replacing: lsp.Range }
 }
 
 function getFilterText(line: string, insertText: string | undefined, entry: import('typescript/lib/protocol').CompletionEntry, position: lsp.Position, document: LspDocument): string | undefined {
@@ -48,7 +52,15 @@ function getFilterText(line: string, insertText: string | undefined, entry: impo
     return insertText;
 }
 
-export function asCompletionItem(entry: import('typescript/lib/protocol').CompletionEntry, file: string, position: lsp.Position, document: LspDocument): TSCompletionItem {
+interface CompletionContext {
+    readonly isNewIdentifierLocation: boolean;
+    readonly isMemberCompletion: boolean;
+    readonly isInValidCommitCharacterContext: boolean;
+    readonly enableCallCompletions: boolean;
+    readonly dotAccessorContext?: DotAccessorContext;
+}
+
+export function asCompletionItem(entry: import('typescript/lib/protocol').CompletionEntry, file: string, position: lsp.Position, document: LspDocument, completionContext: CompletionContext): TSCompletionItem {
     const item: TSCompletionItem = {
         label: entry.name,
         kind: asCompletionItemKind(entry.kind),
@@ -83,13 +95,43 @@ export function asCompletionItem(entry: import('typescript/lib/protocol').Comple
     let line = document.getLine(position.line + 1);
     item.filterText = getFilterText(line, insertText, entry, position, document);
 
-    // NOTE vscode use Range property, but it isn't a LSP property, so we must use TextEdit property, it need a replacementRange.
-    let replacementRange = entry.replacementSpan && asRange(entry.replacementSpan);
-    // Make sure we only replace a single line at most
-    if (replacementRange && replacementRange.start.line !== replacementRange.end.line) {
-        replacementRange = lsp.Range.create(replacementRange.start, document.getLineEnd(replacementRange.start.line));
+    // new range start
+    let replaceRange;
+    if (entry.replacementSpan) {
+         replaceRange = asRange(entry.replacementSpan);
+        if (replaceRange.start.line !== replaceRange.end.line) {
+            replaceRange = lsp.Range.create(replaceRange.start, document.getLineEnd(replaceRange.start.line));
+        }
+        item.range = {
+            inserting: lsp.Range.create(replaceRange.start, position),
+            replacing: replaceRange
+        };
     }
+    // new range end
 
+    // NOTE vscode use Range property, but it isn't a LSP property, so we must use TextEdit property, it need a replacementRange.
+    // let replacementRange = entry.replacementSpan && asRange(entry.replacementSpan);
+    // Make sure we only replace a single line at most
+    // if (replacementRange && replacementRange.start.line !== replacementRange.end.line) {
+    //     replacementRange = lsp.Range.create(replacementRange.start, document.getLineEnd(replacementRange.start.line));
+    // }
+
+    if (completionContext.isMemberCompletion && completionContext.dotAccessorContext) {
+        item.filterText = completionContext.dotAccessorContext.text + (item.insertText || item.label);
+        if (!item.range) {
+            const replacementRange = getReplaceRange(line, document, position, item.label);
+            if (replacementRange) {
+                item.range = {
+                    inserting: completionContext.dotAccessorContext.range,
+                    replacing: RangeUtil.union(completionContext.dotAccessorContext.range, replacementRange)
+                };
+            } else {
+                item.range = completionContext.dotAccessorContext.range;
+            }
+            item.insertText = item.filterText;
+        }
+    }
+    
     if (entry.kindModifiers) {
         const kindModifiers = new Set(entry.kindModifiers.split(/\s+/g));
         if (kindModifiers.has(PConst.KindModifiers.optional)) { // FIXME 抽出成常量
@@ -120,11 +162,20 @@ export function asCompletionItem(entry: import('typescript/lib/protocol').Comple
     }
     // NOTE 搞清楚 textEdit 和 Range 之间的区别：TextEdit 是 Range 的一个变种
     // 在 vscode 中 textEdit 被标记为 deprecated ，推荐使用 range + insertText 代替，但是 lsp 协议并没有改
-    if (insertText && replacementRange) {
+    if (insertText && replaceRange) {
         // TextEdit {range: Range, newLabel: string} 定义在 vscode-langaugeserver-types 中
-        item.textEdit = lsp.TextEdit.replace(replacementRange, insertText);
+        item.textEdit = lsp.TextEdit.replace(replaceRange, insertText);
     } else {
         item.insertText = insertText;
+    }
+    if (!item.range) {
+        const replaceRange = getReplaceRange(line, document, position, item.label);
+        if (replaceRange) {
+            item.range = {
+                inserting: lsp.Range.create(replaceRange.start, position),
+                replacing: replaceRange
+            }
+        }
     }
     return item;
 }
@@ -273,4 +324,22 @@ export function asDetail({ displayParts, source }: tsp.CompletionEntryDetails): 
         result.push(detail);
     }
     return result.join('\n');
+}
+
+function getReplaceRange(line: string, document: LspDocument, position: lsp.Position, label: string) {
+    const wordRange = document.getWordRangeAtPosition(position);
+    let replaceRange = wordRange;
+
+    const text = line.slice(Math.max(0, position.character - label.length), position.character).toLowerCase();
+    const entryName = label.toLowerCase();
+    for (let i = entryName.length; i >= 0; --i) {
+        if (text.endsWith(entryName.substr(0, i)) && (!wordRange || wordRange.start.character > position.character - i)) {
+            replaceRange = lsp.Range.create(
+                lsp.Position.create(position.line, Math.max(0, position.character - i)),
+                position
+            );
+            break;
+        }
+    }
+    return replaceRange;
 }

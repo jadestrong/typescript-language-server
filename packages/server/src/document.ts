@@ -45,10 +45,15 @@ export class LspDocument implements lsp.TextDocument {
         return this.document.lineCount;
     }
 
+    lineAt(line: number): string {
+        return this.document.getText(lsp.Range.create(line, -1, line, Number.MAX_VALUE));
+    }
+
     // 这个应该可以用来实现 lineAt NOTE
     getLine(line: number): string {
-        const lineRange = this.getLineRange(line);
-        return this.getText(lineRange);
+        return this.lineAt(line);
+        // const lineRange = this.getLineRange(line);
+        // return this.getText(lineRange);
     }
 
     getLineRange(line: number): lsp.Range {

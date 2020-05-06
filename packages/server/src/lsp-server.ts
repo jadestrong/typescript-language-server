@@ -29,7 +29,7 @@ import {
 } from './protocol-translation';
 import { getTsserverExecutable } from './utils';
 import { LspDocuments, LspDocument } from './document';
-import { asCompletionItem, TSCompletionItem, asResolvedCompletionItem } from './completion';
+import { TSCompletionItem, asResolvedCompletionItem } from './completion';
 import { asSignatureHelp } from './hover';
 import { Commands } from './commands';
 import { provideQuickFix } from './quickfix';
@@ -40,6 +40,14 @@ import { collectDocumentSymbols, collectSymbolInformations } from './document-sy
 import { computeCallers, computeCallees } from './calls';
 import * as PConst from './protocol.const';
 import winstonLogger from './winstonLogger';
+import { MyCompletionItem } from './features/completions';
+// import { fuzzyScore, fuzzyScoreGracefulAggressive, FuzzyScorer, FuzzyScore, anyScore } from './filters';
+
+export interface DotAccessorContext {
+    readonly range: lsp.Range;
+    readonly text: string;
+}
+
 
 export interface IServerOptions {
     logger: Logger
@@ -459,7 +467,7 @@ export class LspServer {
      * implemented based on
      * https://github.com/Microsoft/vscode/blob/master/extensions/typescript-language-features/src/features/completions.ts
      */
-    async completion(params: lsp.CompletionParams): Promise<TSCompletionItem[] | null> {
+    async completion(params: lsp.CompletionParams): Promise<MyCompletionItem[] | null> {
         const file = uriToPath(params.textDocument.uri);
         this.logger.log('completion', params, file); // 这个是发送给 lsp-client 的信息，就是我们在 lsp-xxx.log
         //  文件中看到的那些，包含了请求和响应
@@ -468,6 +476,9 @@ export class LspServer {
         }
 
         const document = this.documents.get(file);
+        winstonLogger.log('info', 'the line text is: %s', document?.lineAt(params.position.line));
+        // NOTE params.position 与 vscode 内部的 position 的转换关系就在 extHostTypeConverters.ts 文件 Position.to 方法中
+        //   { lineNumber: params.position.line + 1, column: params.position.character + 1 }
         if (!document) {
             throw new Error("The document should be opened for completion, file: " + file);
         }
@@ -478,7 +489,7 @@ export class LspServer {
             includeExternalModuleExports: true,
             includeInsertTextCompletions: true,
             includeAutomaticOptionalChainCompletions: true,
-            triggerCharacter: '.'
+            triggerCharacter: params.context?.triggerCharacter as tsp.CompletionsTriggerCharacter 
         };
         try {
             // {
@@ -493,10 +504,10 @@ export class LspServer {
             // this.tspClient.request 会返回一个 promise ，具体调用是放在这个 interuptDiagnostics 函数内执行的
             // TODO interuptDiagnostics 具体作用？？
 
-            // let isNewIdentifierLocation = true;
+            let isNewIdentifierLocation = true;
             // let isIncomplete = false;
             let isMemberCompletion = false;
-            // let dotAccessorContext: DotAccessorContext | undefined;
+            let dotAccessorContext: DotAccessorContext | undefined;
             let entries: ReadonlyArray<protocol.CompletionEntry>;
             // let metadata: any | undefined;
             const result = await this.interuptDiagnostics(() => this.tspClient.request(CommandTypes.CompletionInfo, args));
@@ -504,11 +515,19 @@ export class LspServer {
                 return null;
             }
 
-            // const body = result.body;
-            // isNewIdentifierLocation = result.body.isNewIdentifierLocation;
+            // winstonLogger.log('info', 'response: %s', JSON.stringify(result.body));
+            isNewIdentifierLocation = result.body.isNewIdentifierLocation;
             isMemberCompletion = result.body.isMemberCompletion;
             if (isMemberCompletion) {
                 // TODO
+                const line = document?.lineAt(params.position.line);
+                const dotMatch = line.slice(0, params.position.character).match(/\??\.\s*$/) || undefined;
+                if (dotMatch) {
+                    const range = lsp.Range.create(lsp.Position.create(params.position.line, params.position.character - dotMatch[0].length), params.position);
+                    const text = document.getText(range);
+                    dotAccessorContext = { range, text };
+                }
+                winstonLogger.log('info', 'dotAccessorContext: %s', JSON.stringify(dotAccessorContext));
             }
 
             // {"seq":0,"type":"response","command":"completionInfo","request_seq":201,"success":true,"performanceData":{"updateGraphDurationMs":1},
@@ -533,9 +552,18 @@ export class LspServer {
             };
             winstonLogger.log('info', 'suggests length: %s', entries.length);
             // return [];
-            return entries
+            // 对应 completions.ts 文件
+            const items = entries
                 .filter(entry => !showExcludeCompletionEntry(entry, completionConfiguration))
-                .map(entry => asCompletionItem(entry, file, params.position, document));
+                .map(entry => new MyCompletionItem(entry, file, params.position, document, {
+                    isNewIdentifierLocation,
+                    isMemberCompletion,
+                    dotAccessorContext,
+                    isInValidCommitCharacterContext: true,
+                    enableCallCompletions: !completionConfiguration.useCodeSnippetsOnMethodSuggest
+                }));
+            winstonLogger.log('info', 'suggests: %s', JSON.stringify(items[0]));
+            return items;
         } catch (error) {
             if (error.message === "No content available.") {
                 this.logger.info('No content was available for completion request');
@@ -545,6 +573,16 @@ export class LspServer {
             }
         }
     }
+
+    // private _createCachedState(_items: TSCompletionItem[]): void {
+    //     const source = _items;
+    //     const target = [];
+    //     const scoreFn: FuzzyScorer = source.length > 2000 ? fuzzyScore : fuzzyScoreGracefulAggressive;
+    //     for (let i = 0; i < source.length; i++) {
+    //         const item = source[i];
+
+    //     }
+    // }
 
     async completionResolve(item: TSCompletionItem): Promise<lsp.CompletionItem> {
         this.logger.log('completion/resolve', item);
@@ -698,7 +736,7 @@ export class LspServer {
             return undefined;
         }
 
-        const response = await await this.interuptDiagnostics(() => this.getSignatureHelp(file, params.position));
+        const response = await this.interuptDiagnostics(() => this.getSignatureHelp(file, params.position));
         if (!response || !response.body) {
             return undefined;
         }

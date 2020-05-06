@@ -598,8 +598,8 @@
         "signature": "75aeafec518f28d9ca2042b07f34f2b796be72fa609c1ba117ca79887b4d04aa"
       },
       "./src/document.ts": {
-        "version": "0ebcd11f6e41bf170c033ff31a00f5644aa79efbc0b1169f1796eb6ff0fe3577",
-        "signature": "f1f7e845a99fa54f4c8e68c988adfde211a4786db636d02b5555555821be0301"
+        "version": "3ecb5bd99ac26dab3535f1d38c5b3e2a16013464bfa15a56a0711e31c1981118",
+        "signature": "13eada461940d974e47c03affccf678d4ea972ffc13b8870fe7b8cdeb13eba14"
       },
       "./src/protocol-translation.ts": {
         "version": "526903a151b9f209cd0505f731471bf217fcacaf662195c1c760ed2285188e8d",
@@ -637,9 +637,17 @@
         "version": "67037118f29a432a9130f5ae4e59e30218363e65ced991f017cfafebd63146ca",
         "signature": "37ee9fffaf377d0ebcf7d574a8c4271aef93135e45a576f54577402118f8c68b"
       },
+      "./src/util/position.ts": {
+        "version": "50d5bcf53454aacd5f9276a9f58560bc0df1d328165120f1a677722c4de7ac81",
+        "signature": "bab616e3ffef55845c5db5ea8a3b361b4c89bd7e50fa0cdf9cb5add6b18e2866"
+      },
+      "./src/util/range.ts": {
+        "version": "3b0c3569a6356c62a799e2edfbdd5e60ce3543a7a28f145eac5a12e10ece417f",
+        "signature": "dcd64fbf050f4b107dee557f130e762357cb2d71df9471c095cd76ff28d4c1ec"
+      },
       "./src/completion.ts": {
-        "version": "0685d07943ec47788ba78863b7c47889ea8e6bcf18b4056e15e3df6e7965e331",
-        "signature": "df65c1efef7b55697cc7011dc462bee0285f06f2aeb8c169bf8d2265c6f88286"
+        "version": "7180e5618d6504b1c18287b71b311cd67d1daa02d7fdfdbdb665a6951255da39",
+        "signature": "210579cc64208c431a7fc1bdbbf80ffc0f065f62ce6693df5ce5a80edf0a22ab"
       },
       "./src/hover.ts": {
         "version": "92ed46f7775c705d336824a2e634267f50a7f613002cf4ada1eeab5d7ccaa989",
@@ -685,9 +693,13 @@
         "version": "e35088150e32f0f0458274016ec84f2a187171aaf592aed695f1c1afca149495",
         "signature": "a0f64bc95b041b29fac86f43f693637e7cd19ce4253dfab8867c2e683199e76d"
       },
+      "./src/features/completions.ts": {
+        "version": "0b28bc3bb963e9b3cc59b406122c1383ad0693b04dec4cb8b2783ec1c22412f3",
+        "signature": "88e9290e97947a52fbc95196d490969692313943c23e86ac135fe5688e57092a"
+      },
       "./src/lsp-server.ts": {
-        "version": "236ae8e189ccc2eaebd5d5426942b1b4ff92d7946f14004b1cf6cb855b83699f",
-        "signature": "d8abd18b4f70c54241c4fdf71ea82826eee106af4464530dad5b5034cd2cb033"
+        "version": "6407e53f1504e601f954269044a404ef9c5e25ee001dd0b13f6966bf810e8d1e",
+        "signature": "f12f00ffb9d212b661b6061f0952d8fa38ed580a40a3cb1eb73952574c73bffa"
       },
       "./src/lsp-connection.ts": {
         "version": "9ec28ed23fa2bddde13bc1d6f2ec2a0856cfb8b6152ba287e1974038f63c3c97",
@@ -712,6 +724,10 @@
       "./src/file-lsp-server.spec.ts": {
         "version": "9f4645c284226701062325e326349109d99828a33f620dfef5ee11f91e79d654",
         "signature": "9ab1cc1ab4b011147f46dbe5e10b2049e71018b70b0df962972694fe42d874d2"
+      },
+      "./src/filters.ts": {
+        "version": "2d05d10a533f0fe206a26f0653e1b29584a6b5bca707f0d435246f1a358dd660",
+        "signature": "ec829f53448fd6910a32ec8c5b6006ba0205f8590fbcbdf1e2566fea126630f1"
       },
       "./src/lsp-server.spec.ts": {
         "version": "4b6cffe8d793a362f2a375f5e2c4f587d1e362a3f3d1f588e144c45ab9ef38f5",
@@ -2007,6 +2023,21 @@
         "./node_modules/@types/node/util.d.ts",
         "./node_modules/@types/node/ts3.2/util.d.ts"
       ],
+      "./src/util/position.ts": [
+        "./node_modules/vscode-languageserver/lib/main.d.ts",
+        "./node_modules/@types/node/fs.d.ts",
+        "./node_modules/@types/node/ts3.2/fs.d.ts",
+        "./node_modules/@types/node/util.d.ts",
+        "./node_modules/@types/node/ts3.2/util.d.ts"
+      ],
+      "./src/util/range.ts": [
+        "./node_modules/vscode-languageserver/lib/main.d.ts",
+        "./src/util/position.ts",
+        "./node_modules/@types/node/fs.d.ts",
+        "./node_modules/@types/node/ts3.2/fs.d.ts",
+        "./node_modules/@types/node/util.d.ts",
+        "./node_modules/@types/node/ts3.2/util.d.ts"
+      ],
       "./src/completion.ts": [
         "./node_modules/vscode-languageserver/lib/main.d.ts",
         "../../node_modules/typescript/lib/protocol.d.ts",
@@ -2015,6 +2046,8 @@
         "./src/protocol-translation.ts",
         "./src/commands.ts",
         "./src/protocol.const.ts",
+        "./src/lsp-server.ts",
+        "./src/util/range.ts",
         "./node_modules/@types/node/fs.d.ts",
         "./node_modules/@types/node/ts3.2/fs.d.ts",
         "./node_modules/@types/node/util.d.ts",
@@ -2117,6 +2150,20 @@
         "./node_modules/@types/node/util.d.ts",
         "./node_modules/@types/node/ts3.2/util.d.ts"
       ],
+      "./src/features/completions.ts": [
+        "./node_modules/vscode-languageserver/lib/main.d.ts",
+        "../../node_modules/typescript/lib/protocol.d.ts",
+        "./src/document.ts",
+        "./src/tsp-command-types.ts",
+        "./src/lsp-server.ts",
+        "./src/protocol-translation.ts",
+        "./src/protocol.const.ts",
+        "./src/util/range.ts",
+        "./node_modules/@types/node/fs.d.ts",
+        "./node_modules/@types/node/ts3.2/fs.d.ts",
+        "./node_modules/@types/node/util.d.ts",
+        "./node_modules/@types/node/ts3.2/util.d.ts"
+      ],
       "./src/lsp-server.ts": [
         "./node_modules/@types/node/path.d.ts",
         "./node_modules/tempy/index.d.ts",
@@ -2146,6 +2193,7 @@
         "./src/calls.ts",
         "./src/protocol.const.ts",
         "./src/winstonlogger.ts",
+        "./src/features/completions.ts",
         "./node_modules/@types/node/fs.d.ts",
         "./node_modules/@types/node/ts3.2/fs.d.ts",
         "./node_modules/@types/node/util.d.ts",
@@ -2198,6 +2246,12 @@
         "../../node_modules/@types/chai/index.d.ts",
         "./src/lsp-server.ts",
         "./src/test-utils.ts",
+        "./node_modules/@types/node/fs.d.ts",
+        "./node_modules/@types/node/ts3.2/fs.d.ts",
+        "./node_modules/@types/node/util.d.ts",
+        "./node_modules/@types/node/ts3.2/util.d.ts"
+      ],
+      "./src/filters.ts": [
         "./node_modules/@types/node/fs.d.ts",
         "./node_modules/@types/node/ts3.2/fs.d.ts",
         "./node_modules/@types/node/util.d.ts",
@@ -3381,7 +3435,7 @@
         "./node_modules/@types/node/ts3.2/util.d.ts"
       ],
       "./src/document.ts": [
-        "../../node_modules/vscode-languageserver/lib/main.d.ts"
+        "./node_modules/vscode-languageserver/lib/main.d.ts"
       ],
       "./src/protocol-translation.ts": [
         "./src/document.ts",
@@ -3419,11 +3473,18 @@
         "./src/tsp-command-types.ts",
         "../../node_modules/typescript/lib/protocol.d.ts"
       ],
+      "./src/util/position.ts": [
+        "./node_modules/vscode-languageserver/lib/main.d.ts"
+      ],
+      "./src/util/range.ts": [
+        "./node_modules/vscode-languageserver/lib/main.d.ts"
+      ],
       "./src/completion.ts": [
         "../../node_modules/typescript/lib/protocol.d.ts",
-        "../../node_modules/vscode-languageserver/lib/main.d.ts",
+        "./node_modules/vscode-languageserver/lib/main.d.ts",
         "./src/document.ts",
-        "./src/tsp-command-types.ts"
+        "./src/tsp-command-types.ts",
+        "./src/lsp-server.ts"
       ],
       "./src/hover.ts": [
         "../../node_modules/typescript/lib/protocol.d.ts",
@@ -3491,12 +3552,19 @@
       "./src/winstonlogger.ts": [
         "../../node_modules/winston/index.d.ts"
       ],
+      "./src/features/completions.ts": [
+        "../../node_modules/typescript/lib/protocol.d.ts",
+        "./node_modules/vscode-languageserver/lib/main.d.ts",
+        "./src/document.ts",
+        "./src/lsp-server.ts"
+      ],
       "./src/lsp-server.ts": [
+        "./node_modules/vscode-languageserver/lib/main.d.ts",
         "./src/logger.ts",
         "./src/lsp-client.ts",
         "./src/ts-protocol.ts",
-        "../../node_modules/vscode-languageserver/lib/main.d.ts",
         "../../node_modules/typescript/lib/protocol.d.ts",
+        "./src/features/completions.ts",
         "./src/completion.ts",
         "./src/document.ts",
         "./src/lsp-protocol.calls.proposed.ts"
@@ -3561,35 +3629,6 @@
       ]
     },
     "semanticDiagnosticsPerFile": [
-      "./src/lsp-protocol.calls.proposed.ts",
-      "./src/tsp-command-types.ts",
-      "./src/ts-protocol.ts",
-      "./src/lsp-client.ts",
-      "./src/logger.ts",
-      "./src/utils.ts",
-      "./src/tsp-client.ts",
-      "./src/document.ts",
-      "./src/protocol-translation.ts",
-      "./src/calls.ts",
-      "./src/diagnostic-queue.ts",
-      "./src/modules-resolver.ts",
-      "./src/commands.ts",
-      "./src/protocol.const.ts",
-      "./src/completion.ts",
-      "./src/hover.ts",
-      "./src/quickfix.ts",
-      "./src/refactor.ts",
-      "./src/organize-imports.ts",
-      "./src/document-symbol.ts",
-      "./src/winstonlogger.ts",
-      "./src/lsp-connection.ts",
-      "./src/cli.ts",
-      "./src/test-utils.ts",
-      "./src/file-lsp-server.spec.ts",
-      "./src/lsp-server.spec.ts",
-      "./src/modules-resolver.spec.ts",
-      "./src/tsp-client.spec.ts",
-      "./src/lsp-server.ts",
       "../../node_modules/typescript/lib/lib.es5.d.ts",
       "../../node_modules/typescript/lib/lib.es2015.d.ts",
       "../../node_modules/typescript/lib/lib.es2016.d.ts",
@@ -3707,6 +3746,7 @@
       "./node_modules/vscode-languageserver/lib/callhierarchy.proposed.d.ts",
       "./node_modules/vscode-languageserver/lib/sematictokens.proposed.d.ts",
       "./node_modules/vscode-languageserver/lib/main.d.ts",
+      "./src/lsp-protocol.calls.proposed.ts",
       "./node_modules/tempy/node_modules/type-fest/source/basic.d.ts",
       "./node_modules/tempy/node_modules/type-fest/source/except.d.ts",
       "./node_modules/tempy/node_modules/type-fest/source/mutable.d.ts",
@@ -3731,23 +3771,55 @@
       "./node_modules/tempy/node_modules/type-fest/source/tsconfig-json.d.ts",
       "./node_modules/tempy/node_modules/type-fest/index.d.ts",
       "./node_modules/tempy/index.d.ts",
+      "./src/tsp-command-types.ts",
+      "./src/ts-protocol.ts",
+      "./src/lsp-client.ts",
+      "./src/logger.ts",
+      "./src/utils.ts",
+      "./src/tsp-client.ts",
       "./node_modules/vscode-uri/lib/umd/index.d.ts",
+      "./src/document.ts",
+      "./src/protocol-translation.ts",
+      "./src/calls.ts",
       "./node_modules/commander/typings/index.d.ts",
       "./node_modules/@types/fs-extra/index.d.ts",
       "./node_modules/p-debounce/index.d.ts",
+      "./src/diagnostic-queue.ts",
+      "./src/modules-resolver.ts",
+      "./src/commands.ts",
+      "./src/protocol.const.ts",
+      "./src/util/position.ts",
+      "./src/util/range.ts",
+      "./src/completion.ts",
+      "./src/hover.ts",
+      "./src/quickfix.ts",
+      "./src/refactor.ts",
+      "./src/organize-imports.ts",
+      "./src/document-symbol.ts",
       "./node_modules/logform/index.d.ts",
       "./node_modules/winston-transport/index.d.ts",
       "./node_modules/winston/lib/winston/config/index.d.ts",
       "./node_modules/winston/lib/winston/transports/index.d.ts",
       "./node_modules/winston/index.d.ts",
+      "./src/winstonlogger.ts",
+      "./src/features/completions.ts",
+      "./src/lsp-connection.ts",
+      "./src/cli.ts",
       "./src/command-exists.d.ts",
       "../../node_modules/@types/chai/index.d.ts",
+      "./src/test-utils.ts",
+      "./src/file-lsp-server.spec.ts",
+      "./src/filters.ts",
+      "./src/lsp-server.spec.ts",
+      "./src/modules-resolver.spec.ts",
+      "./src/tsp-client.spec.ts",
       "./node_modules/@types/color-name/index.d.ts",
       "../../node_modules/@types/eslint-visitor-keys/index.d.ts",
       "../../node_modules/@types/minimatch/index.d.ts",
       "../../node_modules/@types/glob/index.d.ts",
       "../../node_modules/@types/json-schema/index.d.ts",
-      "../../node_modules/@types/mocha/index.d.ts"
+      "../../node_modules/@types/mocha/index.d.ts",
+      "./src/lsp-server.ts"
     ]
   },
   "version": "3.8.3"
