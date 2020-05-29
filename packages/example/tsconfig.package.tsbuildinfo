@@ -716,6 +716,7 @@
       "outDir": "./lib",
       "rootDir": "./src",
       "composite": true,
+      "watch": true,
       "configFilePath": "./tsconfig.package.json"
     },
     "referencedMap": {

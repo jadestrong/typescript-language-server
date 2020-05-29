@@ -13,11 +13,13 @@ import { asRange, toTextEdit, asPlainText, asDocumentation } from './protocol-tr
 import { Commands } from './commands';
 import * as PConst from './protocol.const';
 import { DotAccessorContext } from './lsp-server';
-import RangeUtil from './util/range';
+// import RangeUtil from './util/range';
 // import { CompletionItemKind } from 'vscode';
 
 export interface TSCompletionItem extends lsp.CompletionItem {
-    data: tsp.CompletionDetailsRequestArgs,
+    uri?: lsp.DocumentUri,
+    position?: lsp.Position,
+    // data: tsp.CompletionDetailsRequestArgs,
     range?: lsp.Range | { inserting: lsp.Range; replacing: lsp.Range }
 }
 
@@ -60,13 +62,27 @@ interface CompletionContext {
     readonly dotAccessorContext?: DotAccessorContext;
 }
 
+// function convertRange(document: LspDocument, span: tsp.TextSpan, position: lsp.Position): lsp.Range | { inserting: lsp.Range; replacing: lsp.Range } {
+//     let replaceRange = asRange(span);
+//     if (replaceRange.start.line !== replaceRange.end.line) {
+//         replaceRange = lsp.Range.create(replaceRange.start, document.getLineEnd(replaceRange.start.line));
+//     }
+//     return {
+//         inserting: lsp.Range.create(replaceRange.start, position),
+//         replacing: replaceRange
+//     };
+// }
+
 export function asCompletionItem(entry: import('typescript/lib/protocol').CompletionEntry, file: string, position: lsp.Position, document: LspDocument, completionContext: CompletionContext): TSCompletionItem {
+    // const range = entry.replacementSpan && asRange(entry.replacementSpan);
+    // const range = entry.replacementSpan && convertRange(document, entry.replacementSpan, position);
     const item: TSCompletionItem = {
+        uri: document.uri,
+        // position,
         label: entry.name,
         kind: asCompletionItemKind(entry.kind),
         sortText: entry.sortText,
-        commitCharacters: asCommitCharacters(entry.kind),
-        data: {
+        data: { // data 用于 completionItem/resolve 的参数
             file,
             line: position.line + 1,
             offset: position.character + 1,
@@ -74,6 +90,22 @@ export function asCompletionItem(entry: import('typescript/lib/protocol').Comple
                 entry.source ? { name: entry.name, source: entry.source } : entry.name
             ]
         },
+        // data: {
+        //     languageId: 'javascript' ,
+        //     file: document.uri,
+        //     offset: position.character + 1,
+        //     source: entry.source
+        // },
+        // textEdit: range && lsp.TextEdit.replace(range, entry.name),
+        // commitCharacters: asCommitCharacters(entry.kind),
+        // data: {
+        //     file,
+        //     line: position.line + 1,
+        //     offset: position.character + 1,
+        //     entryNames: [
+        //         entry.source ? { name: entry.name, source: entry.source } : entry.name
+        //     ]
+        // },
         filterText: entry.insertText
     }
     if (entry.source) {
@@ -102,10 +134,10 @@ export function asCompletionItem(entry: import('typescript/lib/protocol').Comple
         if (replaceRange.start.line !== replaceRange.end.line) {
             replaceRange = lsp.Range.create(replaceRange.start, document.getLineEnd(replaceRange.start.line));
         }
-        item.range = {
-            inserting: lsp.Range.create(replaceRange.start, position),
-            replacing: replaceRange
-        };
+        // item.range = {
+        //     inserting: lsp.Range.create(replaceRange.start, position),
+        //     replacing: replaceRange
+        // };
     }
     // new range end
 
@@ -118,18 +150,18 @@ export function asCompletionItem(entry: import('typescript/lib/protocol').Comple
 
     if (completionContext.isMemberCompletion && completionContext.dotAccessorContext) {
         item.filterText = completionContext.dotAccessorContext.text + (item.insertText || item.label);
-        if (!item.range) {
-            const replacementRange = getReplaceRange(line, document, position, item.label);
-            if (replacementRange) {
-                item.range = {
-                    inserting: completionContext.dotAccessorContext.range,
-                    replacing: RangeUtil.union(completionContext.dotAccessorContext.range, replacementRange)
-                };
-            } else {
-                item.range = completionContext.dotAccessorContext.range;
-            }
-            item.insertText = item.filterText;
-        }
+        // if (!item.range) {
+        //     const replacementRange = getReplaceRange(line, document, position, item.label);
+        //     if (replacementRange) {
+        //         item.range = {
+        //             inserting: completionContext.dotAccessorContext.range,
+        //             replacing: RangeUtil.union(completionContext.dotAccessorContext.range, replacementRange)
+        //         };
+        //     } else {
+        //         item.range = completionContext.dotAccessorContext.range;
+        //     }
+        //     item.insertText = item.filterText;
+        // }
     }
     
     if (entry.kindModifiers) {
@@ -168,15 +200,15 @@ export function asCompletionItem(entry: import('typescript/lib/protocol').Comple
     } else {
         item.insertText = insertText;
     }
-    if (!item.range) {
-        const replaceRange = getReplaceRange(line, document, position, item.label);
-        if (replaceRange) {
-            item.range = {
-                inserting: lsp.Range.create(replaceRange.start, position),
-                replacing: replaceRange
-            }
-        }
-    }
+    // if (!item.range) {
+    //     const replaceRange = getReplaceRange(line, document, position, item.label);
+    //     if (replaceRange) {
+    //         item.range = {
+    //             inserting: lsp.Range.create(replaceRange.start, position),
+    //             replacing: replaceRange
+    //         }
+    //     }
+    // }
     return item;
 }
 
@@ -326,20 +358,20 @@ export function asDetail({ displayParts, source }: tsp.CompletionEntryDetails): 
     return result.join('\n');
 }
 
-function getReplaceRange(line: string, document: LspDocument, position: lsp.Position, label: string) {
-    const wordRange = document.getWordRangeAtPosition(position);
-    let replaceRange = wordRange;
+// function getReplaceRange(line: string, document: LspDocument, position: lsp.Position, label: string) {
+//     const wordRange = document.getWordRangeAtPosition(position);
+//     let replaceRange = wordRange;
 
-    const text = line.slice(Math.max(0, position.character - label.length), position.character).toLowerCase();
-    const entryName = label.toLowerCase();
-    for (let i = entryName.length; i >= 0; --i) {
-        if (text.endsWith(entryName.substr(0, i)) && (!wordRange || wordRange.start.character > position.character - i)) {
-            replaceRange = lsp.Range.create(
-                lsp.Position.create(position.line, Math.max(0, position.character - i)),
-                position
-            );
-            break;
-        }
-    }
-    return replaceRange;
-}
+//     const text = line.slice(Math.max(0, position.character - label.length), position.character).toLowerCase();
+//     const entryName = label.toLowerCase();
+//     for (let i = entryName.length; i >= 0; --i) {
+//         if (text.endsWith(entryName.substr(0, i)) && (!wordRange || wordRange.start.character > position.character - i)) {
+//             replaceRange = lsp.Range.create(
+//                 lsp.Position.create(position.line, Math.max(0, position.character - i)),
+//                 position
+//             );
+//             break;
+//         }
+//     }
+//     return replaceRange;
+// }

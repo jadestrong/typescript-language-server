@@ -40,7 +40,8 @@ import { collectDocumentSymbols, collectSymbolInformations } from './document-sy
 import { computeCallers, computeCallees } from './calls';
 import * as PConst from './protocol.const';
 import winstonLogger from './winstonLogger';
-import { MyCompletionItem } from './features/completions';
+// import { MyCompletionItem } from './features/completions';
+import { asCompletionItem } from './completion';
 // import { fuzzyScore, fuzzyScoreGracefulAggressive, FuzzyScorer, FuzzyScore, anyScore } from './filters';
 
 export interface DotAccessorContext {
@@ -467,12 +468,12 @@ export class LspServer {
      * implemented based on
      * https://github.com/Microsoft/vscode/blob/master/extensions/typescript-language-features/src/features/completions.ts
      */
-    async completion(params: lsp.CompletionParams): Promise<MyCompletionItem[] | null> {
+    async completion(params: lsp.CompletionParams): Promise<lsp.CompletionList | null> {
         const file = uriToPath(params.textDocument.uri);
         this.logger.log('completion', params, file); // 这个是发送给 lsp-client 的信息，就是我们在 lsp-xxx.log
         //  文件中看到的那些，包含了请求和响应
         if (!file) {
-            return [];
+            return { isIncomplete: false, items: [] };
         }
 
         const document = this.documents.get(file);
@@ -527,7 +528,7 @@ export class LspServer {
                     const text = document.getText(range);
                     dotAccessorContext = { range, text };
                 }
-                winstonLogger.log('info', 'dotAccessorContext: %s', JSON.stringify(dotAccessorContext));
+                // winstonLogger.log('info', 'dotAccessorContext: %s', JSON.stringify(dotAccessorContext));
             }
 
             // {"seq":0,"type":"response","command":"completionInfo","request_seq":201,"success":true,"performanceData":{"updateGraphDurationMs":1},
@@ -555,15 +556,27 @@ export class LspServer {
             // 对应 completions.ts 文件
             const items = entries
                 .filter(entry => !showExcludeCompletionEntry(entry, completionConfiguration))
-                .map(entry => new MyCompletionItem(entry, file, params.position, document, {
+                .map(entry => asCompletionItem(entry, file, params.position, document, {
                     isNewIdentifierLocation,
                     isMemberCompletion,
-                    dotAccessorContext,
                     isInValidCommitCharacterContext: true,
-                    enableCallCompletions: !completionConfiguration.useCodeSnippetsOnMethodSuggest
+                    enableCallCompletions: !completionConfiguration.useCodeSnippetsOnMethodSuggest,
+                    dotAccessorContext
                 }));
+            // const items = entries
+            //     .filter(entry => !showExcludeCompletionEntry(entry, completionConfiguration))
+            //     .map(entry => new MyCompletionItem(entry, file, params.position, document, {
+            //         isNewIdentifierLocation,
+            //         isMemberCompletion,
+            //         dotAccessorContext,
+            //         isInValidCommitCharacterContext: true,
+            //         enableCallCompletions: !completionConfiguration.useCodeSnippetsOnMethodSuggest
+            //     }));
             winstonLogger.log('info', 'suggests: %s', JSON.stringify(items[0]));
-            return items;
+            return {
+                isIncomplete: false,
+                items
+            };
         } catch (error) {
             if (error.message === "No content available.") {
                 this.logger.info('No content was available for completion request');
@@ -586,7 +599,10 @@ export class LspServer {
 
     async completionResolve(item: TSCompletionItem): Promise<lsp.CompletionItem> {
         this.logger.log('completion/resolve', item);
+        // winstonLogger.log('info', "completion/resolve: %s", JSON.stringify(item));
+
         const { body } = await this.interuptDiagnostics(() => this.tspClient.request(CommandTypes.CompletionDetails, item.data));
+        // winstonLogger.log('info', "body: %s", JSON.stringify(body));
         const details = body && body.length && body[0];
         if (!details) {
             return item;

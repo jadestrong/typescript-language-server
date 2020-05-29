@@ -138,15 +138,16 @@ export class MyCompletionItem extends BaseCompletionItem {
         this.label = entry.name;
         this.kind = this.convertCompletionKind(entry.kind);
         this.sortText = entry.sortText;
-        this.commitCharacters = this.convertCommitCharacters(entry.kind);
-        this.data = {
-            file,
-            line: position.line + 1,
-            offset: position.character + 1,
-            entryNames: [
-                entry.source ? { name: entry.name, source: entry.source } : entry.name
-            ]
-        };
+        // const commitCharacters = this.convertCommitCharacters(entry.kind);
+        // console.log(commitCharacters);
+        // this.data = {
+        //     file,
+        //     line: position.line + 1,
+        //     offset: position.character + 1,
+        //     entryNames: [
+        //         entry.source ? { name: entry.name, source: entry.source } : entry.name
+        //     ]
+        // };
         this.filterText = entry.insertText;
 
         if (entry.source) {
@@ -246,36 +247,36 @@ export class MyCompletionItem extends BaseCompletionItem {
         }
     }
 
-    private convertCommitCharacters(kind: ScriptElementKind): string[] | undefined {
-        const commitCharacters: string[] = [];
-        switch (kind) {
-            case ScriptElementKind.memberGetAccessorElement:
-            case ScriptElementKind.memberSetAccessorElement:
-            case ScriptElementKind.constructSignatureElement:
-            case ScriptElementKind.callSignatureElement:
-            case ScriptElementKind.indexSignatureElement:
-            case ScriptElementKind.enumElement:
-            case ScriptElementKind.interfaceElement:
-                commitCharacters.push('.');
-                break;
+    // private convertCommitCharacters(kind: ScriptElementKind): string[] | undefined {
+    //     const commitCharacters: string[] = [];
+    //     switch (kind) {
+    //         case ScriptElementKind.memberGetAccessorElement:
+    //         case ScriptElementKind.memberSetAccessorElement:
+    //         case ScriptElementKind.constructSignatureElement:
+    //         case ScriptElementKind.callSignatureElement:
+    //         case ScriptElementKind.indexSignatureElement:
+    //         case ScriptElementKind.enumElement:
+    //         case ScriptElementKind.interfaceElement:
+    //             commitCharacters.push('.');
+    //             break;
 
-        case ScriptElementKind.moduleElement:
-        case ScriptElementKind.alias:
-        case ScriptElementKind.constElement:
-        case ScriptElementKind.letElement:
-        case ScriptElementKind.variableElement:
-        case ScriptElementKind.localVariableElement:
-        case ScriptElementKind.memberVariableElement:
-        case ScriptElementKind.classElement:
-        case ScriptElementKind.functionElement:
-        case ScriptElementKind.memberFunctionElement:
-            commitCharacters.push('.', ',');
-            commitCharacters.push('(');
-            break;
-    }
+    //     case ScriptElementKind.moduleElement:
+    //     case ScriptElementKind.alias:
+    //     case ScriptElementKind.constElement:
+    //     case ScriptElementKind.letElement:
+    //     case ScriptElementKind.variableElement:
+    //     case ScriptElementKind.localVariableElement:
+    //     case ScriptElementKind.memberVariableElement:
+    //     case ScriptElementKind.classElement:
+    //     case ScriptElementKind.functionElement:
+    //     case ScriptElementKind.memberFunctionElement:
+    //         commitCharacters.push('.', ',');
+    //         commitCharacters.push('(');
+    //         break;
+    // }
 
-        return commitCharacters.length === 0 ? undefined : commitCharacters;
-    }
+    //     return commitCharacters.length === 0 ? undefined : commitCharacters;
+    // }
 
     private convertCompletionKind(kind: ScriptElementKind): vscode.CompletionItemKind {
         switch (kind) {
