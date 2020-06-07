@@ -39,7 +39,7 @@ import { TypeScriptInitializeParams, TypeScriptInitializationOptions, TypeScript
 import { collectDocumentSymbols, collectSymbolInformations } from './document-symbol';
 import { computeCallers, computeCallees } from './calls';
 import * as PConst from './protocol.const';
-import winstonLogger from './winstonLogger';
+// import winstonLogger from './winstonLogger';
 // import { MyCompletionItem } from './features/completions';
 import { asCompletionItem } from './completion';
 // import { fuzzyScore, fuzzyScoreGracefulAggressive, FuzzyScorer, FuzzyScore, anyScore } from './filters';
@@ -477,7 +477,7 @@ export class LspServer {
         }
 
         const document = this.documents.get(file);
-        winstonLogger.log('info', 'the line text is: %s', document?.lineAt(params.position.line));
+        // winstonLogger.log('info', 'the line text is: %s', document?.lineAt(params.position.line));
         // NOTE params.position 与 vscode 内部的 position 的转换关系就在 extHostTypeConverters.ts 文件 Position.to 方法中
         //   { lineNumber: params.position.line + 1, column: params.position.character + 1 }
         if (!document) {
@@ -551,7 +551,7 @@ export class LspServer {
                 nameSuggestions: true,
                 includeAutomaticOptionalChainCompletions: true
             };
-            winstonLogger.log('info', 'suggests length: %s', entries.length);
+            // winstonLogger.log('info', 'suggests length: %s', entries.length);
             // return [];
             // 对应 completions.ts 文件
             const items = entries
@@ -572,7 +572,7 @@ export class LspServer {
             //         isInValidCommitCharacterContext: true,
             //         enableCallCompletions: !completionConfiguration.useCodeSnippetsOnMethodSuggest
             //     }));
-            winstonLogger.log('info', 'suggests: %s', JSON.stringify(items[0]));
+            // winstonLogger.log('info', 'suggests: %s', JSON.stringify(items[0]));
             return {
                 isIncomplete: false,
                 items

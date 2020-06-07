@@ -18,7 +18,7 @@
         "typescript": "^3.8.3"
     },
     "scripts": {
-        "bootstrap": "npm i && lerna bootstrap --ignore-scripts && npm run build",
+        "bootstrap": "yarn && lerna bootstrap --ignore-scripts && npm run build",
         "build": "tsc --build packages/tsconfig.project.json",
         "watch": "tsc-watch --build packages/tsconfig.project.json --onSuccess \"yarn start\"",
         "lint": "eslint packages/**/*.ts",
