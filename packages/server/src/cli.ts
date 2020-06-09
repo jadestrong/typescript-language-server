@@ -29,7 +29,7 @@ if (!(program.stdio || program.socket || program.nodeIpc)) {
 }
 
 if (program.tsserverLogFile && !program.tsserverLogVerbosity) {
-  program.tsserverLogVerbosity = 'normal'
+  program.tsserverLogVerbosity = 'off'
 }
 
 let logLevel = lsp.MessageType.Warning
